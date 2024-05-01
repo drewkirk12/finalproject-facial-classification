@@ -45,7 +45,6 @@ def parse_args():
         help="Evaluate model on test set.")
     
 
-
 def train(model, datasets, checkpoint_path, logs_path, init_epoch):
     """ Training routine. """
 
