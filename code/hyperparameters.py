@@ -1,5 +1,5 @@
-#Model Hyperparameters
-#Should seperate parameters for seperate models
+# Model Hyperparameters
+# Should seperate parameters for seperate models
 
 num_epochs = 50
 
