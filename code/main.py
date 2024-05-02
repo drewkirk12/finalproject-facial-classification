@@ -10,12 +10,11 @@ import argparse
 import re
 from datetime import datetime
 import tensorflow as tf
-import numpy as np
 
 import hyperparameters as hp
 from models import SEResNet
 from preprocess import Datasets
-from tensorflow.keras.callbacks import ModelCheckpoint
+from utils import CustomModelSaver
 
 def parse_args():
     """ Parse command line arguments. """
@@ -55,16 +54,8 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
             log_dir=logs_path,
             update_freq='batch',
             profile_batch=0),
-        # Setup the checkpoint callback to save the best model based on validation loss
-        ModelCheckpoint(
-            filepath=os.path.join(checkpoint_path, 'model-{epoch:02d}-{val_loss:.2f}.h5'),
-            save_weights_only=True,
-            monitor='val_loss',
-            mode='min',
-            save_best_only=True,
-            verbose=1)
         # ImageLabelingLogger(logs_path, datasets),
-        # CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
+        CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
     ]
 
     # Include confusion logger in callbacks if flag set
