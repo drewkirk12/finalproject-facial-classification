@@ -15,6 +15,7 @@ import numpy as np
 import hyperparameters as hp
 from models import SEResNet
 from preprocess import Datasets
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 def parse_args():
     """ Parse command line arguments. """
@@ -53,8 +54,15 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
         tf.keras.callbacks.TensorBoard(
             log_dir=logs_path,
             update_freq='batch',
-            profile_batch=0)
-            # ,
+            profile_batch=0),
+        # Setup the checkpoint callback to save the best model based on validation loss
+        ModelCheckpoint(
+            filepath=os.path.join(checkpoint_path, 'model-{epoch:02d}-{val_loss:.2f}.h5'),
+            save_weights_only=True,
+            monitor='val_loss',
+            mode='min',
+            save_best_only=True,
+            verbose=1)
         # ImageLabelingLogger(logs_path, datasets),
         # CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
     ]
@@ -68,7 +76,7 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
         x=datasets.train_data,
         validation_data=datasets.test_data,
         epochs=hp.num_epochs,
-        batch_size=None,            # Required as None as we use an ImageDataGenerator; see preprocess.py get_data()
+        batch_size=None, # Required as None as we use an ImageDataGenerator; see preprocess.py get_data()
         callbacks=callback_list,
         initial_epoch=init_epoch,
     )
