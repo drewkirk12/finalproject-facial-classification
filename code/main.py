@@ -14,7 +14,8 @@ import tensorflow as tf
 import hyperparameters as hp
 from models import SEResNet
 from preprocess import Datasets
-from utils import CustomModelSaver, get_activations, plot_activations
+from utils import \
+    ConfusionMatrixLogger, CustomModelSaver, get_activations, plot_activations
 
 def parse_args():
     """ Parse command line arguments. """
@@ -40,6 +41,12 @@ def parse_args():
         train your model. If you want to continue training from where
         you left off, this is how you would load your weights.''')
     parser.add_argument(
+        '--confusion',
+        action='store_true',
+        help='''Log a confusion matrix at the end of each
+        epoch (viewable in Tensorboard). This is turned off
+        by default as it takes a little bit of time to complete.''')
+    parser.add_argument(
         "--evaluate",
         action='store_true',
         help="Evaluate model on test set.")
@@ -63,8 +70,8 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
     ]
 
     # Include confusion logger in callbacks if flag set
-    # if ARGS.confusion:
-    #     callback_list.append(ConfusionMatrixLogger(logs_path, datasets))
+    if ARGS.confusion:
+        callback_list.append(ConfusionMatrixLogger(logs_path, datasets))
 
     # Begin training
     model.fit(
