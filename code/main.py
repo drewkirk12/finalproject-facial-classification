@@ -14,7 +14,7 @@ import tensorflow as tf
 import hyperparameters as hp
 from models import SEResNet
 from preprocess import Datasets
-from utils import CustomModelSaver
+from utils import CustomModelSaver, get_activations, plot_activations
 
 def parse_args():
     """ Parse command line arguments. """
@@ -43,7 +43,11 @@ def parse_args():
         "--evaluate",
         action='store_true',
         help="Evaluate model on test set.")
-    
+    parser.add_argument(
+        "--visualize-features",
+        action='store_true',
+        help="Visualize feature maps of the model.")
+
 
 def train(model, datasets, checkpoint_path, logs_path, init_epoch):
     """ Training routine. """
@@ -143,13 +147,18 @@ def main():
 
     if ARGS.evaluate:
         test(model, datasets.test_data)
-
         #Lime explanation
         #path = ARGS.lime_image
         #LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
     else:
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
-
+        
+    if ARGS.visualize_features:
+        test_images = datasets.test_data[:10]  # TODO: Modify test data call to get images correctly
+        layer_names_to_visualize = ['conv1', 'seblock2', 'output'] # Names of layers you want to check
+        activations = get_activations(model, test_images, layer_names_to_visualize)
+        plot_activations(test_images, activations, layer_names_to_visualize)
+        
 
 # Make arguments global
 ARGS = parse_args()

@@ -1,5 +1,7 @@
 import os
 import re
+import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
 
 class CustomModelSaver(tf.keras.callbacks.Callback):
@@ -76,3 +78,30 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
                     min_acc_file = weight_file
 
         return min_acc_file, max_acc_file, max_acc, num_weights
+    
+    
+def get_activations(model, input_data, layer_names):
+    """ Fetches activations for a given model and input data for specified layers. """
+    
+    layer_outputs = [layer.output for layer in model.layers if layer.name in layer_names]
+    activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
+    activations = activation_model.predict(input_data)
+    return activations
+
+
+def plot_activations(original_images, activations, layer_names):
+    """ Overlays activation heatmaps on original images for specified layers. """
+    
+    for i, layer_activations in enumerate(activations):
+        fig, axes = plt.subplots(1, len(original_images), figsize=(20, 3))
+        fig.suptitle(f"Layer: {layer_names[i]}", fontsize=16)
+
+        for img_idx, img in enumerate(original_images):
+            ax = axes[img_idx]
+            img = np.squeeze(img) # remove channel dimension if grayscale
+            activation = layer_activations[img_idx, :, :, np.argmax(np.mean(layer_activations[img_idx], axis=(0, 1)))]
+            
+            ax.imshow(img, cmap='gray')
+            ax.imshow(activation, cmap='jet', alpha=0.5, interpolation='bilinear')
+            ax.axis('off')
+        plt.show()
