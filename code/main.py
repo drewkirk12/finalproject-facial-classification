@@ -28,9 +28,9 @@ def parse_args():
         default="seresnet",
         help="Model to use for training.")
     parser.add_argument(
-        "--data_path",
+        "--data",
         type=str, 
-        default="data/",
+        default="../data/",
         help="Path to data directory.")
     parser.add_argument(
         "--load-checkpoint",
@@ -43,6 +43,7 @@ def parse_args():
         "--evaluate",
         action='store_true',
         help="Evaluate model on test set.")
+    return parser.parse_args() 
     
 
 
@@ -111,7 +112,7 @@ def main():
     # Run script from location of main.py
     os.chdir(sys.path[0])
 
-    datasets = Datasets(ARGS.data, ARGS.task)
+    datasets = Datasets(ARGS.data)
 
     if ARGS.model == 'seresnet':
         model = SEResNet()

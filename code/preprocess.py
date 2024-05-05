@@ -12,10 +12,9 @@ class Datasets():
     for preprocessing.
     """
 
-    def __init__(self, data_path, task):
+    def __init__(self, data_path):
 
         self.data_path = data_path
-        self.task = task
 
         # Dictionaries for (label index) <--> (class name)
         self.idx_to_class = {}
@@ -32,9 +31,9 @@ class Datasets():
         # Setup data generators
         # These feed data to the training and testing routine based on the dataset
         self.train_data = self.get_data(
-            os.path.join(self.data_path, "train/"), task == '3', True, True)
+            os.path.join(self.data_path, "train/"), True)
         self.test_data = self.get_data(
-            os.path.join(self.data_path, "test/"), task == '3', False, False)
+            os.path.join(self.data_path, "test/"), False)
 
     def calc_mean_and_std(self):
         """ Calculate mean and standard deviation of a sample of the
@@ -89,23 +88,7 @@ class Datasets():
         img = self.standardize(img)
         return img
 
-    # Felicity's data augmentation (worked very well for HW5)
-    data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
-              rotation_range=5,
-              width_shift_range=0.1,
-              height_shift_range=0.1,
-              shear_range=0.2,
-              zoom_range=0.2,
-              horizontal_flip=True,
-              fill_mode='nearest',
-              preprocessing_function=self.preprocess_fn)
-
-    # Data augmentation as described in paper
-    data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
-              rotation_range=30,
-              preprocessing_function=self.preprocess_fn)
-
-    def get_data(self, path, shuffle, data_gen=data_gen):
+    def get_data(self, path, shuffle):
         """ Returns an image data generator which can be iterated
         through for images and corresponding class labels.
 
@@ -119,6 +102,22 @@ class Datasets():
         Returns:
             An iterable image-batch generator
         """
+        # Felicity's data augmentation (worked very well for HW5)
+        data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+                rotation_range=5,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.2,
+                zoom_range=0.2,
+                horizontal_flip=True,
+                fill_mode='nearest',
+                preprocessing_function=self.preprocess_fn)
+
+        # Data augmentation as described in paper
+        data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+                rotation_range=30,
+                preprocessing_function=self.preprocess_fn)
+
 
         # Image size of 224x224 as specified in paper
         img_size = 224
