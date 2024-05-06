@@ -19,6 +19,12 @@ from preprocess import Datasets
 from utils import \
     ConfusionMatrixLogger, CustomModelSaver, get_activations, plot_activations
 
+from skimage.io import imread
+from lime import lime_image
+from skimage.segmentation import mark_boundaries
+from matplotlib import pyplot as plt
+import numpy as np
+
 def parse_args():
     """ Parse command line arguments. """
 
@@ -56,8 +62,81 @@ def parse_args():
         "--visualize-features",
         action='store_true',
         help="Visualize feature maps of the model.")
+    parser.add_argument(
+        '--lime-image',
+        default='test/Bedroom/image_0003.jpg',
+        help='''Name of an image in the dataset to use for LIME evaluation.''')
     return parser.parse_args() 
-   
+
+
+def LIME_explainer(model, path, preprocess_fn, timestamp):
+    """
+    This function takes in a trained model and a path to an image and outputs 4
+    visual explanations using the LIME model
+    """
+
+    save_directory = "lime_explainer_images" + os.sep + timestamp
+    if not os.path.exists("lime_explainer_images"):
+        os.mkdir("lime_explainer_images")
+    if not os.path.exists(save_directory):
+        os.mkdir(save_directory)
+    image_index = 0
+
+    def image_and_mask(title, positive_only=True, num_features=5,
+                       hide_rest=True):
+        nonlocal image_index
+
+        temp, mask = explanation.get_image_and_mask(
+            explanation.top_labels[0], positive_only=positive_only,
+            num_features=num_features, hide_rest=hide_rest)
+        plt.imshow(mark_boundaries(temp / 2 + 0.5, mask))
+        plt.title(title)
+
+        image_save_path = save_directory + os.sep + str(image_index) + ".png"
+        plt.savefig(image_save_path, dpi=300, bbox_inches='tight')
+        plt.show()
+
+        image_index += 1
+
+    # Read the image and preprocess it as before
+    image = imread(path)
+    if len(image.shape) == 2:
+        image = np.stack([image, image, image], axis=-1)
+    image = resize(image, (hp.img_size, hp.img_size, 3), preserve_range=True)
+    image = preprocess_fn(image)
+    
+
+    explainer = lime_image.LimeImageExplainer()
+
+    explanation = explainer.explain_instance(
+        image.astype('double'), model.predict, top_labels=5, hide_color=0,
+        num_samples=1000)
+
+    # The top 5 superpixels that are most positive towards the class with the
+    # rest of the image hidden
+    image_and_mask("Top 5 superpixels", positive_only=True, num_features=5,
+                   hide_rest=True)
+
+    # The top 5 superpixels with the rest of the image present
+    image_and_mask("Top 5 with the rest of the image present",
+                   positive_only=True, num_features=5, hide_rest=False)
+
+    # The 'pros and cons' (pros in green, cons in red)
+    image_and_mask("Pros(green) and Cons(red)",
+                   positive_only=False, num_features=10, hide_rest=False)
+
+    # Select the same class explained on the figures above.
+    ind = explanation.top_labels[0]
+    # Map each explanation weight to the corresponding superpixel
+    dict_heatmap = dict(explanation.local_exp[ind])
+    heatmap = np.vectorize(dict_heatmap.get)(explanation.segments)
+    plt.imshow(heatmap, cmap='RdBu', vmin=-heatmap.max(), vmax=heatmap.max())
+    plt.colorbar()
+    plt.title("Map each explanation weight to the corresponding superpixel")
+
+    image_save_path = save_directory + os.sep + str(image_index) + ".png"
+    plt.savefig(image_save_path, dpi=300, bbox_inches='tight')
+    plt.show()   
 
 def train(model, datasets, checkpoint_path, logs_path, init_epoch):
     """ Training routine. """
@@ -190,8 +269,8 @@ def main():
     if ARGS.evaluate:
         test(model, datasets.test_data)
         #Lime explanation
-        #path = ARGS.lime_image
-        #LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
+        path = ARGS.lime_image
+        LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
     else:
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
         
