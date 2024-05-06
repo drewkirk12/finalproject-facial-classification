@@ -1,7 +1,7 @@
 import tensorflow as tf
 import hyperparameters as hp
 import seresnet_hp as sern_hp
-import keras.api._v2.keras as keras
+# import keras.api._v2.keras as keras
 from keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense, GlobalAveragePooling2D, multiply, Reshape
 from keras.applications.inception_v3 import InceptionV3
 from keras.models import Model, Sequential
