@@ -10,13 +10,14 @@ import argparse
 import re
 from datetime import datetime
 import tensorflow as tf
-import numpy as np
 
 import hyperparameters as hp
 from models import SEResNet
 from models import VGGModel
 from models import InceptionModel
 from preprocess import Datasets
+from utils import \
+    ConfusionMatrixLogger, CustomModelSaver, get_activations, plot_activations
 
 def parse_args():
     """ Parse command line arguments. """
@@ -42,12 +43,21 @@ def parse_args():
         train your model. If you want to continue training from where
         you left off, this is how you would load your weights.''')
     parser.add_argument(
+        '--confusion',
+        action='store_true',
+        help='''Log a confusion matrix at the end of each
+        epoch (viewable in Tensorboard). This is turned off
+        by default as it takes a little bit of time to complete.''')
+    parser.add_argument(
         "--evaluate",
         action='store_true',
         help="Evaluate model on test set.")
+    parser.add_argument(
+        "--visualize-features",
+        action='store_true',
+        help="Visualize feature maps of the model.")
     return parser.parse_args() 
-    
-
+   
 
 def train(model, datasets, checkpoint_path, logs_path, init_epoch):
     """ Training routine. """
@@ -57,22 +67,21 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
         tf.keras.callbacks.TensorBoard(
             log_dir=logs_path,
             update_freq='batch',
-            profile_batch=0)
-            # ,
+            profile_batch=0),
         # ImageLabelingLogger(logs_path, datasets),
-        # CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
+        CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
     ]
 
     # Include confusion logger in callbacks if flag set
-    # if ARGS.confusion:
-    #     callback_list.append(ConfusionMatrixLogger(logs_path, datasets))
+    if ARGS.confusion:
+        callback_list.append(ConfusionMatrixLogger(logs_path, datasets))
 
     # Begin training
     model.fit(
         x=datasets.train_data,
         validation_data=datasets.test_data,
         epochs=hp.num_epochs,
-        batch_size=None,            # Required as None as we use an ImageDataGenerator; see preprocess.py get_data()
+        batch_size=None, # Required as None as we use an ImageDataGenerator; see preprocess.py get_data()
         callbacks=callback_list,
         initial_epoch=init_epoch,
     )
@@ -179,13 +188,18 @@ def main():
 
     if ARGS.evaluate:
         test(model, datasets.test_data)
-
         #Lime explanation
         #path = ARGS.lime_image
         #LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
     else:
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
-
+        
+    if ARGS.visualize_features:
+        test_images = datasets.test_data[:10]  # TODO: Modify test data call to get images correctly
+        layer_names_to_visualize = ['conv1', 'seblock2', 'output'] # Names of layers you want to check
+        activations = get_activations(model, test_images, layer_names_to_visualize)
+        plot_activations(test_images, activations, layer_names_to_visualize)
+        
 
 # Make arguments global
 ARGS = parse_args()

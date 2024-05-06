@@ -75,14 +75,13 @@ class SEResNet(tf.keras.Model):
         self.optimizer = tf.keras.optimizers.SGD(learning_rate=sern_hp.learning_rate, momentum=sern_hp.momentum)
 
         self.architecture = [
-            Conv2D(64, 7, 1, padding="same", activation="relu"),
-            SEBasicBlock(64),
-            SEBasicBlock(128),
-            SEBasicBlock(256),
-            SEBasicBlock(512),
-            Flatten(),
-            # TODO: replace with sern_hp.num_classes
-            Dense(15, activation='softmax')
+            Conv2D(64, 7, 1, padding="same", activation="relu", name='conv1'),
+            SEBasicBlock(64, name='seblock1'),
+            SEBasicBlock(128, name='seblock2'),
+            SEBasicBlock(256, name='seblock3'),
+            SEBasicBlock(512, name='seblock4'),
+            Flatten(name='flatten'),
+            Dense(num_classes, activation='softmax', name='dense')
         ]
 
     def call(self, x):
