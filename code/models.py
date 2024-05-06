@@ -82,7 +82,7 @@ class SEResNet(tf.keras.Model):
             SEBasicBlock(512),
             Flatten(),
             # TODO: replace with sern_hp.num_classes
-            Dense(15, activation='softmax')
+            Dense(9, activation='softmax')
         ]
 
     def call(self, x):
