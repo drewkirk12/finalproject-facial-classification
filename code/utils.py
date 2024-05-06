@@ -94,11 +94,11 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
 class CustomModelSaver(tf.keras.callbacks.Callback):
     """ Custom Keras callback for saving weights of networks. """
 
-    def __init__(self, checkpoint_dir, task, max_num_weights=5):
+    def __init__(self, checkpoint_dir, model, max_num_weights=5):
         super(CustomModelSaver, self).__init__()
 
         self.checkpoint_dir = checkpoint_dir
-        self.task = task
+        self.model = model
         self.max_num_weights = max_num_weights
 
     def on_epoch_end(self, epoch, logs=None):
@@ -115,18 +115,25 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
             save_name = "weights.e{0:03d}-acc{1:.4f}.h5".format(
                 epoch, cur_acc)
 
-            if self.task == '1':
-                save_location = self.checkpoint_dir + os.sep + "your." + save_name
+            if self.model == 'seresnet':
+                save_location = self.checkpoint_dir + os.sep + "seresnet." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
                        .format(epoch + 1, cur_acc, location = save_location))
                 self.model.save_weights(save_location)
-            else:
+            elif self.model == 'vgg':
                 save_location = self.checkpoint_dir + os.sep + "vgg." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
                        .format(epoch + 1, cur_acc, location = save_location))
                 # Only save weights of classification head of VGGModel
+                self.model.head.save_weights(save_location)
+            else:
+                save_location = self.checkpoint_dir + os.sep + "inception." + save_name
+                print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
+                       "maximum TEST accuracy.\nSaving checkpoint at {location}")
+                       .format(epoch + 1, cur_acc, location = save_location))
+                # Only save weights of classification head of InceptionModel
                 self.model.head.save_weights(save_location)
 
             # Ensure max_num_weights is not exceeded by removing

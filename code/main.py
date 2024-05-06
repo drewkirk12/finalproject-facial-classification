@@ -147,9 +147,9 @@ def train(model, datasets, checkpoint_path, logs_path, init_epoch):
             log_dir=logs_path,
             update_freq='batch',
             profile_batch=0),
-        # ImageLabelingLogger(logs_path, datasets),
+        #ImageLabelingLogger(logs_path, datasets),
         # TODO: fix CustomModelSaver
-        # CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
+        CustomModelSaver(checkpoint_path, ARGS.task, hp.max_num_weights)
     ]
 
     # Include confusion logger in callbacks if flag set
