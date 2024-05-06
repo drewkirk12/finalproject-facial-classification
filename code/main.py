@@ -124,7 +124,7 @@ def main():
     # Run script from location of main.py
     os.chdir(sys.path[0])
 
-    datasets = Datasets(ARGS.data, ARGS.model)
+    datasets = Datasets('fer2013', ARGS.model, ARGS.data)
 
     if ARGS.model == 'seresnet':
         model = SEResNet()
