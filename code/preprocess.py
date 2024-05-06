@@ -12,9 +12,10 @@ class Datasets():
     for preprocessing.
     """
 
-    def __init__(self, data_path):
+    def __init__(self, data_path, model):
 
         self.data_path = data_path
+        self.model = model
 
         # Dictionaries for (label index) <--> (class name)
         self.idx_to_class = {}
@@ -84,8 +85,13 @@ class Datasets():
 
     def preprocess_fn(self, img):
         """ Preprocess function for ImageDataGenerator. """
-        img = img / 255.
-        img = self.standardize(img)
+        if self.model == 'vgg':
+            img = tf.keras.applications.vgg16.preprocess_input(img)
+        elif self.model == 'inception':
+            img = tf.keras.applications.inception_v3.preprocess_input(img)
+        else:
+            img = img / 255.
+            img = self.standardize(img)
         return img
 
     def get_data(self, path, shuffle):
@@ -103,15 +109,15 @@ class Datasets():
             An iterable image-batch generator
         """
         # Felicity's data augmentation (worked very well for HW5)
-        data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
-                rotation_range=5,
-                width_shift_range=0.1,
-                height_shift_range=0.1,
-                shear_range=0.2,
-                zoom_range=0.2,
-                horizontal_flip=True,
-                fill_mode='nearest',
-                preprocessing_function=self.preprocess_fn)
+        # data_gen = tf.keras.preprocessing.image.ImageDataGenerator(
+        #         rotation_range=5,
+        #         width_shift_range=0.1,
+        #         height_shift_range=0.1,
+        #         shear_range=0.2,
+        #         zoom_range=0.2,
+        #         horizontal_flip=True,
+        #         fill_mode='nearest',
+        #         preprocessing_function=self.preprocess_fn)
 
         # Data augmentation as described in paper
         data_gen = tf.keras.preprocessing.image.ImageDataGenerator(

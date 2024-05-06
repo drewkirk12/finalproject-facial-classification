@@ -1,5 +1,5 @@
 #Model Hyperparameters
-#Should seperate parameters for seperate models
+#Should separate parameters for separate models
 
 num_epochs = 20
 
@@ -13,6 +13,6 @@ preprocess_sample_size = 400
 
 max_num_weights = 5
 
-batch_size = 100
+batch_size = 150
 
 num_classes = 15

@@ -3,6 +3,8 @@ import hyperparameters as hp
 import seresnet_hp as sern_hp
 import keras.api._v2.keras as keras
 from keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense, GlobalAveragePooling2D, multiply, Reshape
+from keras.applications.inception_v3 import InceptionV3
+from keras.models import Model, Sequential
 
 # conda install keras-cv -n cs1430
 from keras_cv.layers import SqueezeAndExcite2D
@@ -42,6 +44,27 @@ class SEBasicBlock(keras.layers.Layer):
               x = self.fc1(x)
               x = self.fc2(x)
               return multiply([in_block, x])
+    
+##### Pytorch SEBlock implementation if needed #####
+# import torch.nn as nn
+# import torch
+
+# class SE_Block(nn.Module):
+#     def __init__(self, c, r=16):
+#         super(SE_Block, self).__init__()
+#         self.squeeze = nn.AdaptiveAvgPool2d(1)
+#         self.excitation = nn.Sequential(
+#             nn.Linear(c, c // r, bias=False),
+#             nn.ReLU(inplace=True),
+#             nn.Linear(c // r, c, bias=False),
+#             nn.Sigmoid()
+#         )
+
+#     def forward(self, x):
+#         bs, c, _, _ = x.size()
+#         y = self.squeeze(x).view(bs, c)
+#         y = self.excitation(y).view(bs, c, 1, 1)
+#         return x * y.expand_as(x)
 
 class SEResNet(tf.keras.Model):
     """ SE-ResNet model described in the paper. """
@@ -143,3 +166,39 @@ class VGGModel(tf.keras.Model):
         """ Loss function for model. """
 
         return tf.keras.losses.sparse_categorical_crossentropy(labels, predictions)
+    
+class InceptionModel(tf.keras.Model):
+       def __init__(self):
+              super(InceptionModel, self).__init__()
+
+              self.optimizer = tf.keras.optimizers.Adam(learning_rate=hp.learning_rate)
+
+              self.inception = InceptionV3(weights='imagenet', include_top=False, input_shape=(299,299,3))
+
+              for layer in self.inception.layers:
+                     layer.trainable = False
+
+              # I've seen multiple heads similar to this one for InceptionV3
+              self.head = [
+                     GlobalAveragePooling2D(),
+                     Flatten(),
+                     Dense(1024, activation='relu'),
+                     Dropout(0.5),
+                     Dense(hp.num_classes, activation='softmax')]
+
+              self.inception = tf.keras.Sequential(self.inception, name="inception_base")
+              self.head = tf.keras.Sequential(self.head, name="inception_head")
+
+       def call(self, x):
+              """ Passes the image through the network. """
+
+              x = self.inception(x)
+              x = self.head(x)
+
+              return x
+
+       @staticmethod
+       def loss_fn(labels, predictions):
+              """ Loss function for model. """
+
+              return tf.keras.losses.sparse_categorical_crossentropy(labels, predictions)
