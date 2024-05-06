@@ -27,8 +27,8 @@ from keras_cv.layers import SqueezeAndExcite2D
 
 class SEBasicBlock(keras.layers.Layer):
     """ SE Basic Block as described in paper"""
-    def __init__(self, filters, kernel_size=3, ratio=sern_hp.reduction_ratio):
-              super().__init__()
+    def __init__(self, filters, kernel_size=3, ratio=sern_hp.reduction_ratio, **kwargs):
+              super(SEBasicBlock, self).__init__(**kwargs)
               self.C = filters
               self.kernel_size = kernel_size
               self.r = ratio
@@ -81,7 +81,7 @@ class SEResNet(tf.keras.Model):
             SEBasicBlock(256, name='seblock3'),
             SEBasicBlock(512, name='seblock4'),
             Flatten(name='flatten'),
-            Dense(num_classes, activation='softmax', name='dense')
+            Dense(hp.num_classes, activation='softmax', name='dense')
         ]
 
     def call(self, x):
