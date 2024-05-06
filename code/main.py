@@ -64,7 +64,7 @@ def parse_args():
         help="Visualize feature maps of the model.")
     parser.add_argument(
         '--lime-image',
-        default='test/Bedroom/image_0003.jpg',
+        default='test/angry/PrivateTest_88305.jpg',
         help='''Name of an image in the dataset to use for LIME evaluation.''')
     return parser.parse_args() 
 
