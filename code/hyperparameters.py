@@ -1,7 +1,7 @@
 # Model Hyperparameters
 # Should seperate parameters for seperate models
 
-num_epochs = 50
+num_epochs = 20
 
 learning_rate = 1e-4
 
@@ -13,6 +13,6 @@ preprocess_sample_size = 400
 
 max_num_weights = 5
 
-batch_size = 10
+batch_size = 150
 
 num_classes = 15
