@@ -14,6 +14,8 @@ import numpy as np
 
 import hyperparameters as hp
 from models import SEResNet
+from models import VGGModel
+from models import InceptionModel
 from preprocess import Datasets
 
 def parse_args():
@@ -26,11 +28,11 @@ def parse_args():
         "--model",
         type=str,
         default="seresnet",
-        help="Model to use for training.")
+        help="Model to use for training. Options: seresnet, vgg, inception.")
     parser.add_argument(
-        "--data_path",
+        "--data",
         type=str, 
-        default="data/",
+        default="../data/",
         help="Path to data directory.")
     parser.add_argument(
         "--load-checkpoint",
@@ -43,6 +45,7 @@ def parse_args():
         "--evaluate",
         action='store_true',
         help="Evaluate model on test set.")
+    return parser.parse_args() 
     
 
 
@@ -111,7 +114,7 @@ def main():
     # Run script from location of main.py
     os.chdir(sys.path[0])
 
-    datasets = Datasets(ARGS.data, ARGS.task)
+    datasets = Datasets(ARGS.data, ARGS.model)
 
     if ARGS.model == 'seresnet':
         model = SEResNet()
@@ -126,6 +129,37 @@ def main():
     """
     Add additional models here
     """
+    if ARGS.model == "vgg":
+            model = VGGModel()
+            checkpoint_path = "checkpoints" + os.sep + \
+                "vgg_model" + os.sep + timestamp + os.sep
+            logs_path = "logs" + os.sep + "vgg_model" + \
+                os.sep + timestamp + os.sep
+            model(tf.keras.Input(shape=(224, 224, 3)))
+
+            # Print summaries for both parts of the model
+            model.vgg16.summary()
+            model.head.summary()
+
+            # Load base of VGG model
+            model.vgg16.load_weights('vgg16_imagenet.h5', by_name=True)
+
+    if ARGS.model == "inception":
+            model = InceptionModel()
+            checkpoint_path = "checkpoints" + os.sep + \
+                "inception_model" + os.sep + timestamp + os.sep
+            logs_path = "logs" + os.sep + "inception_model" + \
+                os.sep + timestamp + os.sep
+            # Note: may need to change to (299, 299, 3) for Inception V3
+            model(tf.keras.Input(shape=(299, 299, 3)))
+
+            # Print summaries for both parts of the model
+            model.inception.summary()
+            model.head.summary()
+
+            # Load base of Inception model
+            # model.inception.load_weights('inception_v3_weight.h5', by_name=True)
+    
     # Load checkpoints
     if ARGS.load_checkpoint is not None:
         if ARGS.model == 'seresnet':
