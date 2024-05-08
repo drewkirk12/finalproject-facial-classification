@@ -15,4 +15,4 @@ max_num_weights = 5
 
 batch_size = 150
 
-num_classes = 9
+num_classes = 7
