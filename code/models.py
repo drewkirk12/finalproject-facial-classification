@@ -143,7 +143,7 @@ class VGGModel(tf.keras.Model):
         ]
 
         for layer in self.vgg16:
-            layer.trainable = False
+            layer.trainable = True
 
         self.head = [Flatten(),
                     Dense(hp.num_classes, activation='softmax')]
@@ -172,20 +172,25 @@ class InceptionModel(tf.keras.Model):
 
               self.optimizer = tf.keras.optimizers.Adam(learning_rate=hp.learning_rate)
 
-              self.inception = InceptionV3(weights='imagenet', include_top=False, input_shape=(299,299,3))
+              # May change include_top depending on finetuning approach
+              self.inception = InceptionV3(weights='imagenet', include_top=True, input_shape=(299,299,3))
 
+              # Freeze or unfreeze depending on finetuning approach
               for layer in self.inception.layers:
-                     layer.trainable = False
+                     layer.trainable = True
 
-              # I've seen multiple heads similar to this one for InceptionV3
-              self.head = [
-                     GlobalAveragePooling2D(),
-                     Flatten(),
-                     Dense(1024, activation='relu'),
-                     Dropout(0.5),
-                     Dense(hp.num_classes, activation='softmax')]
+              # Use this head if include_top = False
+              # self.head = [
+              #        GlobalAveragePooling2D(),
+              #        Flatten(),
+              #        Dense(1024, activation='relu'),
+              #        Dropout(0.5),
+              #        Dense(hp.num_classes, activation='softmax')]
 
-              self.inception = tf.keras.Sequential(self.inception, name="inception_base")
+              # Use this head if include_top = True (feel free to add layers)
+              self.head = [Dense(hp.num_classes, activation='softmax')]
+
+              # self.inception = tf.keras.Sequential(self.inception, name="inception_base")
               self.head = tf.keras.Sequential(self.head, name="inception_head")
 
        def call(self, x):
