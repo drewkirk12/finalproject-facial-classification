@@ -114,14 +114,13 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         if cur_acc > max_acc:
             save_name = "weights.e{0:03d}-acc{1:.4f}.h5".format(
                 epoch, cur_acc)
-
-            if self.model == 'seresnet':
+            if self.model.name == "se_res_net":
                 save_location = self.checkpoint_dir + os.sep + "seresnet." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
                        .format(epoch + 1, cur_acc, location = save_location))
                 self.model.save_weights(save_location)
-            elif self.model == 'vgg':
+            elif self.model.name == 'vgg_model':
                 save_location = self.checkpoint_dir + os.sep + "vgg." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
