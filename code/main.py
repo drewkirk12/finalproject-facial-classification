@@ -246,7 +246,7 @@ def main():
             model.head.summary()
 
             # Load base of Inception model
-            model.inception.load_weights('inception_v3_weight.h5', by_name=True)
+            model.inception.load_weights('inception_v3_weights.h5', by_name=True)
     
     # Load checkpoints
     if ARGS.load_checkpoint is not None:
