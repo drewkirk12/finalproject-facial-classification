@@ -64,7 +64,8 @@ def parse_args():
         help="Visualize feature maps of the model.")
     parser.add_argument(
         '--lime-image',
-        default='test/angry/PrivateTest_88305.jpg',
+        type=str,
+        default=None,
         help='''Name of an image in the dataset to use for LIME evaluation.''')
     return parser.parse_args() 
 
@@ -246,14 +247,11 @@ def main():
             model.head.summary()
 
             # Load base of Inception model
-            model.inception.load_weights('inception_v3_weights.h5', by_name=True)
+            model.inception.load_weights('inception_v3_weight.h5', by_name=True)
     
     # Load checkpoints
     if ARGS.load_checkpoint is not None:
-        if ARGS.model == 'seresnet':
-            model.load_weights(ARGS.load_checkpoint, by_name=False)
-        else:
-            model.load_weights(ARGS.load_checkpoint, by_name=False)
+        model.load_weights(ARGS.load_checkpoint, by_name=False)
 
     # Make checkpoint directory if needed
     if not ARGS.evaluate and not os.path.exists(checkpoint_path):
@@ -269,7 +267,8 @@ def main():
         test(model, datasets.test_data)
         #Lime explanation
         path = ARGS.lime_image
-        LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
+        if path is not None:
+            LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
     else:
         print("Training", ARGS.model,"model")
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
