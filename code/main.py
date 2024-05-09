@@ -208,8 +208,8 @@ def main():
         model = SEResNet()
         model(tf.keras.Input(shape=(hp.img_size, hp.img_size, 3)))
         checkpoint_path = "checkpoints" + os.sep + \
-            "your_model" + os.sep + timestamp + os.sep
-        logs_path = "logs" + os.sep + "your_model" + \
+            "seresnet_model" + os.sep + timestamp + os.sep
+        logs_path = "logs" + os.sep + "seresnet_model" + \
             os.sep + timestamp + os.sep
 
         # Print summary of model
@@ -246,14 +246,14 @@ def main():
             model.head.summary()
 
             # Load base of Inception model
-            # model.inception.load_weights('inception_v3_weight.h5', by_name=True)
+            model.inception.load_weights('inception_v3_weight.h5', by_name=True)
     
     # Load checkpoints
     if ARGS.load_checkpoint is not None:
         if ARGS.model == 'seresnet':
             model.load_weights(ARGS.load_checkpoint, by_name=False)
         else:
-            model.head.load_weights(ARGS.load_checkpoint, by_name=False)
+            model.load_weights(ARGS.load_checkpoint, by_name=False)
 
     # Make checkpoint directory if needed
     if not ARGS.evaluate and not os.path.exists(checkpoint_path):
@@ -271,6 +271,7 @@ def main():
         path = ARGS.lime_image
         LIME_explainer(model, path, datasets.preprocess_fn, timestamp)
     else:
+        print("Training", ARGS.model,"model")
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
         
     if ARGS.visualize_features:
