@@ -176,17 +176,17 @@ class InceptionModel(tf.keras.Model):
               self.inception = InceptionV3(weights='imagenet', include_top=False, input_shape=(299,299,3))
 
               for layer in self.inception.layers:
-                     layer.trainable = False
+                     layer.trainable = True
 
               # I've seen multiple heads similar to this one for InceptionV3
               self.head = [
                      GlobalAveragePooling2D(),
                      Flatten(),
                      Dense(1024, activation='relu'),
-                     Dropout(0.5),
+                     Dropout(0.7),
                      Dense(hp.num_classes, activation='softmax')]
 
-              self.inception = tf.keras.Sequential(self.inception, name="inception_base")
+              # self.inception = tf.keras.Sequential(self.inception, name="inception_base")
               self.head = tf.keras.Sequential(self.head, name="inception_head")
 
        def call(self, x):
