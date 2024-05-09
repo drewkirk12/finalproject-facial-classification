@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import hyperparameters as hp
+import sklearn
 
 def plot_to_image(figure):
     """ Converts a pyplot figure to an image tensor. """
