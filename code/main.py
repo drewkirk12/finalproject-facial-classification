@@ -20,6 +20,7 @@ from utils import \
     ConfusionMatrixLogger, CustomModelSaver, get_activations, plot_activations
 
 from skimage.io import imread
+from skimage.transform import resize
 from lime import lime_image
 from skimage.segmentation import mark_boundaries
 from matplotlib import pyplot as plt
@@ -274,8 +275,8 @@ def main():
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
         
     if ARGS.visualize_features:
-        test_images = datasets.test_data[:10]  # TODO: Modify test data call to get images correctly
-        layer_names_to_visualize = ['conv1', 'seblock2', 'output'] # Names of layers you want to check
+        test_images, _ = next(iter(datasets.test_data))  # TODO: Modify test data call to get images correctly
+        layer_names_to_visualize = ['block1_conv1', 'block2_conv2', 'output'] # Names of layers you want to check
         activations = get_activations(model, test_images, layer_names_to_visualize)
         plot_activations(test_images, activations, layer_names_to_visualize)
         
