@@ -39,7 +39,7 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         test_true = []
         count = 0
         for i in self.datasets.test_data:
-            test_pred.append(self.model.predict(i[0]))
+            test_pred.append(self.model.predict(i[0], verbose=0))
             test_true.append(i[1])
             count += 1
             if count >= 1500 / hp.batch_size:
@@ -50,7 +50,7 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         test_true = np.array(test_true).flatten()
 
         # Source: https://www.tensorflow.org/tensorboard/image_summaries
-        cm = sklearn.metrics.confusion_matrix(test_true, test_pred)
+        cm = sklearn.metrics.confusion_matrix(test_true, test_pred, )
         figure = self.plot_confusion_matrix(
             cm, class_names=self.datasets.classes)
         cm_image = plot_to_image(figure)
