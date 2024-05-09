@@ -71,7 +71,7 @@ class SEResNet(tf.keras.Model):
 
     def __init__(self):
         super(SEResNet, self).__init__()
-        
+
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=sern_hp.learning_rate)
 
         self.architecture = [
@@ -146,7 +146,8 @@ class VGGModel(tf.keras.Model):
             layer.trainable = False
 
         self.head = [Flatten(),
-                    Dense(hp.num_classes, activation='softmax')]
+                     Dropout(0.5),
+                     Dense(hp.num_classes, activation='softmax')]
 
         # Don't change the below:
         self.vgg16 = tf.keras.Sequential(self.vgg16, name="vgg_base")
