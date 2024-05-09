@@ -71,8 +71,8 @@ class SEResNet(tf.keras.Model):
 
     def __init__(self):
         super(SEResNet, self).__init__()
-
-        self.optimizer = tf.keras.optimizers.SGD(learning_rate=sern_hp.learning_rate, momentum=sern_hp.momentum)
+        
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=sern_hp.learning_rate)
 
         self.architecture = [
             Conv2D(64, 7, 1, padding="same", activation="relu", name='conv1'),
@@ -143,7 +143,7 @@ class VGGModel(tf.keras.Model):
         ]
 
         for layer in self.vgg16:
-            layer.trainable = True
+            layer.trainable = False
 
         self.head = [Flatten(),
                     Dense(hp.num_classes, activation='softmax')]
@@ -172,25 +172,20 @@ class InceptionModel(tf.keras.Model):
 
               self.optimizer = tf.keras.optimizers.Adam(learning_rate=hp.learning_rate)
 
-              # May change include_top depending on finetuning approach
               self.inception = InceptionV3(weights='imagenet', include_top=False, input_shape=(299,299,3))
 
-              # Freeze or unfreeze depending on finetuning approach
               for layer in self.inception.layers:
-                     layer.trainable = True
+                     layer.trainable = False
 
-              # Use this head if include_top = False
+              # I've seen multiple heads similar to this one for InceptionV3
               self.head = [
                      GlobalAveragePooling2D(),
                      Flatten(),
                      Dense(1024, activation='relu'),
-                     Dropout(0.7),
+                     Dropout(0.5),
                      Dense(hp.num_classes, activation='softmax')]
 
-              # Use this head if include_top = True (feel free to add layers)
-              # self.head = [Dense(hp.num_classes, activation='softmax')]
-
-              # self.inception = tf.keras.Sequential(self.inception, name="inception_base")
+              self.inception = tf.keras.Sequential(self.inception, name="inception_base")
               self.head = tf.keras.Sequential(self.head, name="inception_head")
 
        def call(self, x):
