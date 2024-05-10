@@ -102,7 +102,7 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         self.model = model
         self.max_num_weights = max_num_weights
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch, loTgs=None):
         """ At epoch end, weights are saved to checkpoint directory. """
 
         min_acc_file, max_acc_file, max_acc, num_weights = \
@@ -174,13 +174,14 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         return min_acc_file, max_acc_file, max_acc, num_weights
     
     
-def get_activations(model, input_data, layer_names):
-    """ Fetches activations for a given model and input data for specified layers. """
-    
-    layer_outputs = [layer.output for layer in model.layers if layer.name in layer_names]
-    activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
-    activations = activation_model.predict(input_data)
-    return activations
+def get_activations(model, images, layer_names):
+    """ Fetches activations for a given model and input data for specified layers. """    
+    # Fetch the layers by names
+    outputs = [model.get_layer(name).output for name in layer_names]
+    # Define a new model that will return these outputs given the model input
+    activation_model = tf.keras.models.Model(inputs=model.input, outputs=outputs)
+    # Return the activations for the input image
+    return activation_model.predict(images)
 
 
 def plot_activations(original_images, activations, layer_names):

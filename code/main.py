@@ -216,9 +216,7 @@ def main():
 
         # Print summary of model
         model.summary()
-    """
-    Add additional models here
-    """
+    
     if ARGS.model == "vgg":
             model = VGGModel()
             checkpoint_path = "checkpoints" + os.sep + \
@@ -275,11 +273,16 @@ def main():
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
         
     if ARGS.visualize_features:
-        test_images, _ = next(iter(datasets.test_data))  # TODO: Modify test data call to get images correctly
-        layer_names_to_visualize = ['block1_conv1', 'block2_conv2', 'output'] # Names of layers you want to check
+        test_images, _ = next(iter(datasets.test_data))
+        if ARGS.model == 'seresnet':
+            layer_names_to_visualize = ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4', 'dense']
+        elif ARGS.model == 'vgg':
+            layer_names_to_visualize = ['block1_conv2', 'block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3', 'output']
+        elif ARGS.model == 'inception':
+            layer_names_to_visualize = []        
         activations = get_activations(model, test_images, layer_names_to_visualize)
         plot_activations(test_images, activations, layer_names_to_visualize)
-        
+
 
 # Make arguments global
 ARGS = parse_args()
