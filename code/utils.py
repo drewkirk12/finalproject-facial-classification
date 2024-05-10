@@ -102,7 +102,7 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         self.model = model
         self.max_num_weights = max_num_weights
 
-    def on_epoch_end(self, epoch, loTgs=None):
+    def on_epoch_end(self, epoch, logs=None):
         """ At epoch end, weights are saved to checkpoint directory. """
 
         min_acc_file, max_acc_file, max_acc, num_weights = \
