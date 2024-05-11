@@ -60,7 +60,7 @@ def parse_args():
         action='store_true',
         help="Evaluate model on test set.")
     parser.add_argument(
-        "--visualize-features",
+        "--feature-maps",
         action='store_true',
         help="Visualize feature maps of the model.")
     parser.add_argument(
@@ -272,18 +272,12 @@ def main():
         print("Training", ARGS.model,"model")
         train(model, datasets, checkpoint_path, logs_path, init_epoch)
         
-    if ARGS.visualize_features:
+    if ARGS.feature_maps:
         test_images, _ = next(iter(datasets.test_data))
         if ARGS.model == 'seresnet':
             layer_names_to_visualize = ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4', 'dense']
         elif ARGS.model == 'vgg':
-            layer_names_to_visualize = [
-                'vgg_base_block1_conv2',
-                'vgg_base_block2_conv2',
-                'vgg_base_block3_conv3',
-                'vgg_base_block4_conv3',
-                'vgg_base_block5_conv3'
-            ]
+            layer_names_to_visualize = ['block1_conv2', 'block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3']
         elif ARGS.model == 'inception':
             layer_names_to_visualize = []        
         activations = get_activations(model, test_images, layer_names_to_visualize)

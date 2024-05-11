@@ -177,17 +177,7 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
 def get_activations(model, images, layer_names):
     outputs = []
     for name in layer_names:
-        if 'vgg_base' in name:
-            # Extract the specific layer name after prefix
-            layer_name = name.split('vgg_base_')[1]
-            layer_output = model.get_layer('vgg_base').get_layer(layer_name).output
-        elif 'vgg_head' in name:
-            # Extract the specific layer name after prefix
-            layer_name = name.split('vgg_head_')[1]
-            layer_output = model.get_layer('vgg_head').get_layer(layer_name).output
-        else:
-            # Directly get layer output for non-nested layers
-            layer_output = model.get_layer(name).output
+        layer_output = model.get_layer('vgg_base').get_layer(name).output
         outputs.append(layer_output)
 
     # Create a model that will return these outputs given the model input
