@@ -275,7 +275,7 @@ def main():
     if ARGS.feature_maps:
         test_images, _ = next(iter(datasets.test_data))
         if ARGS.model == 'seresnet':
-            layer_names_to_visualize = ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4', 'dense']
+            layer_names_to_visualize = ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4']
         elif ARGS.model == 'vgg':
             layer_names_to_visualize = ['block1_conv2', 'block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3']
         elif ARGS.model == 'inception':
