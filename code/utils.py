@@ -176,9 +176,23 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
     
 def get_activations(model, images, layer_names):
     outputs = []
-    for name in layer_names:
-        layer_output = model.get_layer('vgg_base').get_layer(name).output
-        outputs.append(layer_output)
+    input_to_use = None
+    
+    if model.name == 'seresnet_model':
+        for name in layer_names:
+            layer_output = model.get_layer('se_res_net').get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.get_layer('se_res_net').input
+    elif model.name == 'vgg_model':
+        for name in layer_names:
+            layer_output = model.get_layer('vgg_base').get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.get_layer('vgg_base').input
+    elif model.name == 'inception_model':
+        for name in layer_names:
+            layer_output = model.get_layer('inception_v3').get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.get_layer('inception_v3').input
 
     # Instead of using model.input, use the input to the vgg_base
     input_to_use = model.get_layer('vgg_base').input

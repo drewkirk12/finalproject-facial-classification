@@ -279,7 +279,7 @@ def main():
         elif ARGS.model == 'vgg':
             layer_names_to_visualize = ['block1_conv2', 'block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3']
         elif ARGS.model == 'inception':
-            layer_names_to_visualize = []        
+            layer_names_to_visualize = ['conv2d_1', 'activation_1', 'mixed0', 'mixed3', 'mixed7']
         activations = get_activations(model, test_images, layer_names_to_visualize)
         plot_activations(test_images, activations, layer_names_to_visualize)
 
