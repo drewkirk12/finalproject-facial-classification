@@ -180,25 +180,35 @@ def get_activations(model, images, layer_names):
         layer_output = model.get_layer('vgg_base').get_layer(name).output
         outputs.append(layer_output)
 
+    # Instead of using model.input, use the input to the vgg_base
+    input_to_use = model.get_layer('vgg_base').input
+
     # Create a model that will return these outputs given the model input
-    activation_model = tf.keras.models.Model(inputs=model.input, outputs=outputs)
+    activation_model = tf.keras.models.Model(inputs=input_to_use, outputs=outputs)
+
     # Execute the model to get the activations
     return activation_model.predict(images)
 
 
 def plot_activations(original_images, activations, layer_names):
-    """ Overlays activation heatmaps on original images for specified layers. """
-    
     for i, layer_activations in enumerate(activations):
         fig, axes = plt.subplots(1, len(original_images), figsize=(20, 3))
         fig.suptitle(f"Layer: {layer_names[i]}", fontsize=16)
 
         for img_idx, img in enumerate(original_images):
             ax = axes[img_idx]
-            img = np.squeeze(img) # remove channel dimension if grayscale
+            img = np.squeeze(img)
             activation = layer_activations[img_idx, :, :, np.argmax(np.mean(layer_activations[img_idx], axis=(0, 1)))]
-            
+
+            # Normalize and handle data type
+            activation = (activation - activation.min()) / (activation.max() - activation.min())
+            activation = activation.astype(float)  # Ensure the type is float
+
+            # Check unique values and print them
+            print("Unique values in activation:", np.unique(activation))
+
+            # Display the images using explicit color limits
             ax.imshow(img, cmap='gray')
-            ax.imshow(activation, cmap='jet', alpha=0.5, interpolation='bilinear')
+            ax.imshow(activation, cmap='jet', vmin=0, vmax=1, alpha=0.5, interpolation='bilinear')
             ax.axis('off')
         plt.show()
