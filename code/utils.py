@@ -193,6 +193,9 @@ def get_activations(model, images, layer_names):
             layer_output = model.get_layer('inception_v3').get_layer(name).output
             outputs.append(layer_output)
         input_to_use = model.get_layer('inception_v3').input
+        # Resize images for Inception model
+        images = tf.image.resize(images, (299, 299))
+
 
     # Create a model that will return these outputs given the model input
     activation_model = tf.keras.models.Model(inputs=input_to_use, outputs=outputs)
