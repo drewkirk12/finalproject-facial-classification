@@ -10,40 +10,56 @@ import tensorflow_datasets as tfds
 import fer2013
 import hyperparameters as hp
 
+# Class for augmenting images
+class ImageAugmenter:
+    def __init__(self, image_size):
+        self.random_rotation = tf.keras.layers.RandomRotation(30 / 360)
+        self.random_crop = tf.keras.layers.RandomCrop(*image_size)
+        self.image_size = image_size
+        self.resized_image_size = \
+                tf.cast(
+                        tf.math.round(9/8 * tf.constant(image_size, dtype=tf.float32)),
+                        dtype=tf.int32)
+
+    @tf.function
+    def __call__(self, image):
+        image = tf.image.random_brightness(image, 0.2)
+        image = self.random_rotation(image)
+        image = tf.image.resize(image, self.resized_image_size)
+        image = self.random_crop(image)
+        return image
+
 class Datasets():
     """ Class for containing the training and test sets as well as
     other useful data-related information. Contains the functions
     for preprocessing.
     """
 
-    # Data augmentation compatible with tf.Datasets
-    augment_dataset = keras.Sequential([
-        keras.layers.RandomRotation(30 / 360),
-        ])
-
-    def __init__(self, dataset, model, data_path=None, augment=augment_dataset):
+    def __init__(self, dataset, model, data_path=None, augment=True,
+            target_shape=(224, 224, 3)):
 
         self.data_path = data_path
         self.model = model
+        self.target_shape = target_shape
 
         # Setup data generators
         # These feed data to the training and testing routine based on the dataset
-        if dataset == 'fashion_mnist':
-            self.train_data, self.test_data = tfds.load(
-                'fashion_mnist',
-                split=['train', 'test'],
-                as_supervised=True)
-        elif dataset == 'fer2013':
+        if dataset == 'fer2013':
             self.train_data = fer2013.load(os.path.join(self.data_path, "fer2013/train.csv"),
                 as_supervised=True)
             self.test_data = fer2013.load(os.path.join(self.data_path, "fer2013/fer2013/fer2013.csv"), usage='PublicTest',
                 as_supervised=True)
         else:
-            raise ValueError(f'Unrecognized dataset {dataset}')
+            self.train_data, self.test_data = tfds.load(
+                dataset,
+                split=['train', 'test'],
+                as_supervised=True)
+
+        self.augmenter = ImageAugmenter(target_shape[:2])
 
         # Mean and std for standardization
-        self.mean = tf.zeros((hp.img_size,hp.img_size,3))
-        self.std = tf.ones((hp.img_size,hp.img_size,3))
+        self.mean = tf.zeros(self.target_shape)
+        self.std = tf.ones(self.target_shape)
         self.calc_mean_and_std()
 
         self.train_data = self.preprocess(self.train_data, shuffle=True,
@@ -63,19 +79,18 @@ class Datasets():
 
         # Allocate space in memory for images
         data_sample = np.zeros(
-            (hp.preprocess_sample_size, hp.img_size, hp.img_size, 3))
+            (hp.preprocess_sample_size, *self.target_shape))
         
         preprocess_data = self.train_data.take(hp.preprocess_sample_size)
 
         # Import images
         for i, example in enumerate(preprocess_data):
             img = example[0]
-            img = tf.image.resize(img, (hp.img_size, hp.img_size))
+            img = tf.image.resize(img, self.target_shape[:2])
             img = tf.cast(img, dtype=tf.float32) / 255.
 
             # Grayscale -> RGB
-            if np.shape(img)[-1] == 1:
-                img = tf.broadcast_to(img, (hp.img_size, hp.img_size, 3))
+            img = tf.broadcast_to(img, self.target_shape)
 
             data_sample[i] = img.numpy()
 
@@ -135,7 +150,9 @@ class Datasets():
               rotation_range=30,
               preprocessing_function=preprocess_fn)
 
-    def preprocess(self, data, shuffle=False, augment=augment_dataset):
+    # Data augmentation compatible with tf.Datasets
+
+    def preprocess(self, data, shuffle=False, augment=True):
 
         @tf.function
         def preprocess_images(images, labels):
@@ -156,7 +173,7 @@ class Datasets():
         @tf.function
         def augment_image_batch(images, labels):
             """Augment a batch of images and labels"""
-            images = augment(images)
+            images = self.augmenter(images)
             return images, labels
 
         # Cache data. Must happen before augmenntation.
@@ -173,7 +190,7 @@ class Datasets():
         data = data.map(preprocess_images, num_parallel_calls=tf.data.AUTOTUNE)
 
         # Data augmentation
-        if augment is not None:
+        if augment:
             data = data.map(augment_image_batch, num_parallel_calls=tf.data.AUTOTUNE)
 
         # Prefetch data

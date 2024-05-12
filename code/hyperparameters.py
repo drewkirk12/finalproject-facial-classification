@@ -13,6 +13,6 @@ preprocess_sample_size = 400
 
 max_num_weights = 5
 
-batch_size = 150
+batch_size = 10
 
 num_classes = 9
