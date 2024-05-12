@@ -68,14 +68,14 @@ class SEBasicBlock(keras.layers.Layer):
 
 class SEResNet(tf.keras.Model):
     """ SE-ResNet model described in the paper. """
-
+    
     def __init__(self):
         super(SEResNet, self).__init__()
 
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=sern_hp.learning_rate)
 
         self.architecture = [
-            Conv2D(64, 7, 1, padding="same", activation="relu", name='conv1'),
+            Conv2D(64, 7, 1, padding="same", activation="relu", input_shape=(224, 224, 3), name='conv1'),
             SEBasicBlock(64, name='seblock1'),
             SEBasicBlock(128, name='seblock2'),
             SEBasicBlock(256, name='seblock3'),

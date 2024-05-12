@@ -207,19 +207,15 @@ def plot_activations(original_images, activations, layer_names):
         fig.suptitle(f"Layer: {layer_names[i]}", fontsize=16)
 
         for img_idx, img in enumerate(original_images):
-            ax = axes[img_idx]
+            ax = axes[img_idx] if len(original_images) > 1 else axes
             img = np.squeeze(img)
             activation = layer_activations[img_idx, :, :, np.argmax(np.mean(layer_activations[img_idx], axis=(0, 1)))]
-
-            # Normalize and handle data type
             activation = (activation - activation.min()) / (activation.max() - activation.min())
-            activation = activation.astype(float)  # Ensure the type is float
+            activation = np.clip(activation, 0, 1)  # Ensuring all values are between 0 and 1
 
-            # Check unique values and print them
-            print("Unique values in activation:", np.unique(activation))
-
-            # Display the images using explicit color limits
-            ax.imshow(img, cmap='gray')
-            ax.imshow(activation, cmap='jet', vmin=0, vmax=1, alpha=0.5, interpolation='bilinear')
+            ax.imshow(img, cmap='gray', vmin=0, vmax=1)
+            ax.imshow(activation, cmap='jet', alpha=0.5, interpolation='bilinear')
             ax.axis('off')
-        plt.show()
+
+        plt.savefig(f'layer_{layer_names[i]}.png', bbox_inches='tight')
+        plt.close(fig)
