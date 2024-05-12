@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import hyperparameters as hp
+import sklearn
 
 def plot_to_image(figure):
     """ Converts a pyplot figure to an image tensor. """
@@ -38,7 +39,7 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         test_true = []
         count = 0
         for i in self.datasets.test_data:
-            test_pred.append(self.model.predict(i[0]))
+            test_pred.append(self.model.predict(i[0], verbose=0))
             test_true.append(i[1])
             count += 1
             if count >= 1500 / hp.batch_size:
@@ -49,7 +50,7 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         test_true = np.array(test_true).flatten()
 
         # Source: https://www.tensorflow.org/tensorboard/image_summaries
-        cm = sklearn.metrics.confusion_matrix(test_true, test_pred)
+        cm = sklearn.metrics.confusion_matrix(test_true, test_pred, )
         figure = self.plot_confusion_matrix(
             cm, class_names=self.datasets.classes)
         cm_image = plot_to_image(figure)
@@ -94,11 +95,11 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
 class CustomModelSaver(tf.keras.callbacks.Callback):
     """ Custom Keras callback for saving weights of networks. """
 
-    def __init__(self, checkpoint_dir, task, max_num_weights=5):
+    def __init__(self, checkpoint_dir, model, max_num_weights=5):
         super(CustomModelSaver, self).__init__()
 
         self.checkpoint_dir = checkpoint_dir
-        self.task = task
+        self.model = model
         self.max_num_weights = max_num_weights
 
     def on_epoch_end(self, epoch, logs=None):
@@ -114,20 +115,26 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         if cur_acc > max_acc:
             save_name = "weights.e{0:03d}-acc{1:.4f}.h5".format(
                 epoch, cur_acc)
-
-            if self.task == '1':
-                save_location = self.checkpoint_dir + os.sep + "your." + save_name
+            if self.model.name == "se_res_net":
+                save_location = self.checkpoint_dir + os.sep + "seresnet." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
                        .format(epoch + 1, cur_acc, location = save_location))
                 self.model.save_weights(save_location)
-            else:
+            elif self.model.name == 'vgg_model':
                 save_location = self.checkpoint_dir + os.sep + "vgg." + save_name
                 print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
                        "maximum TEST accuracy.\nSaving checkpoint at {location}")
                        .format(epoch + 1, cur_acc, location = save_location))
                 # Only save weights of classification head of VGGModel
-                self.model.head.save_weights(save_location)
+                self.model.save_weights(save_location)
+            else:
+                save_location = self.checkpoint_dir + os.sep + "inception." + save_name
+                print(("\nEpoch {0:03d} TEST accuracy ({1:.4f}) EXCEEDED previous "
+                       "maximum TEST accuracy.\nSaving checkpoint at {location}")
+                       .format(epoch + 1, cur_acc, location = save_location))
+                # Only save weights of classification head of InceptionModel
+                self.model.save_weights(save_location)
 
             # Ensure max_num_weights is not exceeded by removing
             # minimum weight
@@ -167,28 +174,52 @@ class CustomModelSaver(tf.keras.callbacks.Callback):
         return min_acc_file, max_acc_file, max_acc, num_weights
     
     
-def get_activations(model, input_data, layer_names):
-    """ Fetches activations for a given model and input data for specified layers. """
+def get_activations(model, images, layer_names):
+    outputs = []
+    input_to_use = None
     
-    layer_outputs = [layer.output for layer in model.layers if layer.name in layer_names]
-    activation_model = tf.keras.models.Model(inputs=model.input, outputs=layer_outputs)
-    activations = activation_model.predict(input_data)
-    return activations
+    if model.name == 'se_res_net':
+        for name in layer_names:
+            layer_output = model.get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.input
+    elif model.name == 'vgg_model':
+        for name in layer_names:
+            layer_output = model.get_layer('vgg_base').get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.get_layer('vgg_base').input
+    elif model.name == 'inception_model':
+        for name in layer_names:
+            layer_output = model.get_layer('inception_v3').get_layer(name).output
+            outputs.append(layer_output)
+        input_to_use = model.get_layer('inception_v3').input
+
+    # Create a model that will return these outputs given the model input
+    activation_model = tf.keras.models.Model(inputs=input_to_use, outputs=outputs)
+
+    # Execute the model to get the activations
+    return activation_model.predict(images)
 
 
 def plot_activations(original_images, activations, layer_names):
-    """ Overlays activation heatmaps on original images for specified layers. """
-    
     for i, layer_activations in enumerate(activations):
         fig, axes = plt.subplots(1, len(original_images), figsize=(20, 3))
         fig.suptitle(f"Layer: {layer_names[i]}", fontsize=16)
 
         for img_idx, img in enumerate(original_images):
             ax = axes[img_idx]
-            img = np.squeeze(img) # remove channel dimension if grayscale
+            img = np.squeeze(img)
             activation = layer_activations[img_idx, :, :, np.argmax(np.mean(layer_activations[img_idx], axis=(0, 1)))]
-            
+
+            # Normalize and handle data type
+            activation = (activation - activation.min()) / (activation.max() - activation.min())
+            activation = activation.astype(float)  # Ensure the type is float
+
+            # Check unique values and print them
+            print("Unique values in activation:", np.unique(activation))
+
+            # Display the images using explicit color limits
             ax.imshow(img, cmap='gray')
-            ax.imshow(activation, cmap='jet', alpha=0.5, interpolation='bilinear')
+            ax.imshow(activation, cmap='jet', vmin=0, vmax=1, alpha=0.5, interpolation='bilinear')
             ax.axis('off')
         plt.show()
