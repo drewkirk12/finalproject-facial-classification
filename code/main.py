@@ -15,6 +15,7 @@ import hyperparameters as hp
 from models import SEResNet
 from models import VGGModel
 from models import InceptionModel
+from models2 import SEResNet2
 from preprocess import Datasets
 from utils import \
     ConfusionMatrixLogger, CustomModelSaver, get_activations, plot_activations
@@ -250,6 +251,18 @@ def main():
             # Load base of Inception model - leave commented out!!!
             # model.inception.load_weights('inception_v3_weight.h5', by_name=True)
     
+    if ARGS.model == 'seresnet2':
+        model = SEResNet2(7)
+        input_shape = (224, 224, 3)
+        checkpoint_path = "checkpoints" + os.sep + \
+            "seresnet2_model" + os.sep + timestamp + os.sep
+        logs_path = "logs" + os.sep + "seresnet2_model" + \
+            os.sep + timestamp + os.sep
+
+        model(tf.keras.Input(shape=input_shape))
+        # Print summary of model
+        model.summary(expand_nested=True)
+
     if model == None:
         raise RuntimeError(f'unrecognized model {ARGS.model}')
 
@@ -261,20 +274,20 @@ def main():
             ARGS.model, ARGS.data, augment=True,
             target_shape=input_shape)
 
-    
-    # Load checkpoints
-    if ARGS.load_checkpoint is not None:
-        model.load_weights(ARGS.load_checkpoint, by_name=False)
-
-    # Make checkpoint directory if needed
-    if not ARGS.evaluate and not os.path.exists(checkpoint_path):
-        os.makedirs(checkpoint_path)
-
     # Compile model graph
     model.compile(
         optimizer=model.optimizer,
         loss=model.loss_fn,
         metrics=["sparse_categorical_accuracy"])
+    model(tf.keras.Input(shape=input_shape))
+    
+    # Load checkpoints
+    if ARGS.load_checkpoint is not None:
+        model.load_weights(ARGS.load_checkpoint)
+
+    # Make checkpoint directory if needed
+    if not ARGS.evaluate and not os.path.exists(checkpoint_path):
+        os.makedirs(checkpoint_path)
 
     if ARGS.evaluate:
         test(model, datasets.test_data)
