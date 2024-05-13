@@ -42,10 +42,10 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
             test_pred.append(self.model.predict(i[0], verbose=0))
             test_true.append(i[1])
             count += 1
-            if count >= 1500 / hp.batch_size:
+            if count >= 7100 / hp.batch_size:
                 break
 
-        test_pred = np.array(test_pred)
+        test_pred = np.array(test_pred, dtype= "object")
         test_pred = np.argmax(test_pred, axis=-1).flatten()
         test_true = np.array(test_true).flatten()
 
