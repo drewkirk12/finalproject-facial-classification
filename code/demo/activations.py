@@ -27,6 +27,7 @@ class ActivationVisualizer:
 
 	def __call__(self, image):
 		# Feed image to the model
+		image = tf.cast(image, tf.float32) # Necessary for inception
 		images = tf.expand_dims(image, 0)
 		images = self.preprocess(images)
 		activation = self.activation_model(images)[0]
@@ -40,5 +41,5 @@ class ActivationVisualizer:
 		activation = tf.image.resize(activation, image.shape[:2])
 		activation = tf.broadcast_to(activation, (*activation.shape[:2], 3))
 
-		activated_image = tf.cast(image, tf.float32) / 255 * activation
+		activated_image = image / 255 * activation
 		return tf.clip_by_value(activated_image, 0, 1)
