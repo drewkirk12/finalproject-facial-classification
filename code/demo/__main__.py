@@ -4,7 +4,9 @@ import numpy as np
 import os
 import tensorflow as tf
 
-from demo.visualizer import CameraImageProvider, CropAndResize, Visualizer
+from demo.camera import CameraImageProvider, CropAndResize
+from demo.visualizer import Visualizer
+from demo.activations import ActivationVisualizer
 from models import InceptionModel, VGGModel
 from models2 import SEResNet as SEResNet2
 from preprocess2 import Datasets as Datasets2
@@ -29,6 +31,7 @@ models = {
 		'preprocess': tf.keras.applications.vgg16.preprocess_input,
 		'checkpoint_weights': 'checkpoints/vgg_model/upload/vgg.weights.e011-acc0.6406.h5',
 		'labels': class_labels_sorted,
+		'visualize_layers': ['block1_conv2', 'block2_conv2', 'block3_conv3', 'block4_conv3', 'block5_conv3'],
 	},
 	'inception': {
 		'model': InceptionModel,
@@ -36,6 +39,7 @@ models = {
 		'preprocess': tf.keras.applications.inception_v3.preprocess_input,
 		'checkpoint_weights': 'checkpoints/inception_model/upload/inception.weights.e010-acc0.6780.h5',
 		'labels': class_labels_sorted,
+		'visualize_layers': ['conv2d_1', 'activation_1', 'mixed0', 'mixed3', 'mixed7'],
 	},
 	'seresnet2': {
 		'model': lambda: SEResNet2(num_classes=len(class_labels)),
@@ -43,6 +47,7 @@ models = {
 		'preprocess': Datasets2('fer2013', 'seresnet', data_path='../data', augment=False).preprocess_fn,
 		'checkpoint_weights': 'checkpoints/seresnet2_model/upload/seresnet2.weights.e019-acc0.6305.h5',
 		'labels': class_labels,
+		'visualize_layers': ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4'],
 	},
 }
 
@@ -84,6 +89,7 @@ def main():
 	input_size = models[model_name]['input_size']
 	preprocess = models[model_name]['preprocess']
 	class_labels = models[model_name]['labels']
+	visualize_layers = models[model_name]['visualize_layers']
 	model(tf.keras.Input(shape=(*input_size, 3)))
 	checkpoint_weights = models[model_name]['checkpoint_weights']
 	model.load_weights(checkpoint_weights, by_name=False)
@@ -95,9 +101,11 @@ def main():
 	camera_provider = CameraImageProvider(camera, filters=[
 		lambda img: tf.image.central_crop(img, 0.6),
 		CropAndResize(input_size)])
+	modifiers = [(layer, ActivationVisualizer(model, layer, preprocess)) for layer in visualize_layers]
 
 	visualizer = Visualizer(camera_provider, class_labels,
-							classifier=use_model(model, preprocess))
+							classifier=use_model(model, preprocess),
+							modifiers=modifiers)
 
 	# Show with no delay
 	visualizer.show(0)

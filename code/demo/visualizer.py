@@ -1,18 +1,20 @@
-import matplotlib.pyplot as plt
 from matplotlib import animation
+from matplotlib.gridspec import GridSpecFromSubplotSpec
+import matplotlib.pyplot as plt
 import numpy as np
-import skimage
 
 zero_image = np.zeros((1, 1, 3))
 
 class Visualizer:
 	def __init__(self, image_provider, class_labels,
 			  classifier,
+			  modifiers=[('identity', lambda x: x)],
 			  default_color='navy',
 			  highlight_color='red'):
 		self.class_labels = class_labels
 		self.get_image = image_provider
 		self.predict = classifier
+		self.modifiers = modifiers
 		self.init_plot(class_labels)
 
 		self.default_color = default_color
@@ -35,11 +37,23 @@ class Visualizer:
 		self.input_image_artist = self.input_image_axis.imshow(zero_image)
 
 	def init_modified_image(self, figure, gridspec):
-		self.modified_image_axis = figure.add_subplot(gridspec)
-		self.modified_image_axis.set_xticks([])
-		self.modified_image_axis.set_yticks([])
-		self.modified_image_axis.set_title('Feature map')
-		self.modified_image_artist = self.modified_image_axis.imshow(zero_image)
+		self.modified_image_axes = [None for _ in self.modifiers]
+		self.modified_image_artists = [None for _ in self.modifiers]
+		
+		grid_size = int(np.ceil(len(self.modifiers) ** 0.5))
+		num_rows = int(np.ceil(len(self.modifiers) / grid_size))
+		subgridspec = GridSpecFromSubplotSpec(num_rows, grid_size, gridspec)
+		
+		for i, label_modifier in enumerate(self.modifiers):
+			label, _ = label_modifier
+			row = i // grid_size
+			col = i % grid_size
+
+			self.modified_image_axes[i] = figure.add_subplot(subgridspec[row, col])
+			self.modified_image_axes[i].set_xticks([])
+			self.modified_image_axes[i].set_yticks([])
+			self.modified_image_axes[i].set_title(label)
+			self.modified_image_artists[i] = self.modified_image_axes[i].imshow(zero_image)
 
 	def init_prediction_plot(self, figure, gridspec, class_labels):
 		self.prediction_axis = figure.add_subplot(gridspec)
@@ -53,9 +67,11 @@ class Visualizer:
 
 		self.input_image_artist.set_data(image)
 
-		# Modify image
-		modified_image = image
-		self.modified_image_artist.set_data(modified_image)
+		# Modify image (feature maps)
+		for i, label_modify in enumerate(self.modifiers):
+			_, modify = label_modify
+			modified_image = modify(image)
+			self.modified_image_artists[i].set_data(modified_image)
 
 		prediction_values = self.predict(image)
 
@@ -75,65 +91,3 @@ class Visualizer:
 								save_count=save_count)
 		plt.show()
 
-
-class CameraImageProvider:
-	"""Provides images from a camera, processed by a given list of filters.
-	"""
-	def __init__(self, camera, filters=[]):
-		self.camera = camera
-		self.filters = filters
-
-	def __call__(self):
-
-		ok, image = self.camera.read()
-		if not ok:
-			raise RuntimeError('failed to capture frame')
-
-		# Convert BGR to RGB
-		image = image[...,::-1]
-
-		# Convert to 0-255
-		if np.max(image) <= 1:
-			image = 255 * image
-
-		# Run the image through other filters
-		for filter in self.filters:
-			image = filter(image)
-
-		return image
-
-class CropAndResize:
-	"""Crop and resize an image to the given target size.
-	"""
-	def __init__(self, target_size):
-		self.target_size = target_size
-
-	def __call__(self, image):
-		rows, cols, _ = np.shape(image)
-		
-		new_rows = np.round(cols * (self.target_size[0] / self.target_size[1]))
-		new_cols = np.round(rows * (self.target_size[1] / self.target_size[0]))
-
-		# Compute whether to crop rows or columns
-		if new_rows < rows:
-			new_cols = cols
-		elif new_cols < cols:
-			new_rows = rows
-
-		# Calculate amount to remove from each dimension
-		crop_rows = rows - new_rows
-		crop_cols = cols - new_cols
-
-		# Crop to new_rows, new_cols
-		crop_amounts = [
-			(int(crop_rows // 2), int((crop_rows + 1) // 2)),
-			(int(crop_cols // 2), int((crop_cols + 1) // 2)),
-			(0, 0),
-		]
-		image = skimage.util.crop(image, crop_amounts)
-		# Rescale
-		image = skimage.transform.resize(image, self.target_size)
-
-		image = skimage.util.img_as_ubyte(image)
-
-		return image
