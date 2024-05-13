@@ -123,38 +123,42 @@ class SEBasicBlock(keras.layers.Layer):
 #         y = self.excitation(y).view(bs, c, 1, 1)
 #         return x * y.expand_as(x)
 
-class SEResNet(tf.keras.Model):
-    """ SE-ResNet model based on ResNet-18.
-    """
+def SEResNet(num_classes, **kwargs):
+    """SE-ResNet based on ResNet18"""
 
-    def __init__(self, num_classes, **kwargs):
-        super(SEResNet, self).__init__(**kwargs)
+    conv1 = Conv2D(64, kernel_size=7, strides=2, padding='same',
+            activation="relu", name='conv1',
+            use_bias=False)
+    max_pool = MaxPool2D((3, 3), strides=2, padding='same', name='maxpool1')
+    seblock1 = SEBasicBlock(64, name='seblock1', strides=1)
+    seblock2 = SEBasicBlock(128, name='seblock2', strides=2)
+    seblock3 = SEBasicBlock(256, name='seblock3', strides=2)
+    seblock4 = SEBasicBlock(512, name='seblock4', strides=2)
+    global_average_pool = GlobalAveragePooling2D(name='globalaveragepool')
+    flatten = Flatten(name='flatten')
+    dense = Dense(num_classes, activation='softmax', name='dense')
 
-        # self.optimizer = tf.keras.optimizers.SGD(learning_rate=sern_hp.learning_rate, momentum=sern_hp.momentum)
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
+    inputs = keras.Input(shape=(224, 224, 3))
+    x = inputs
+    x = conv1(x)
+    x = max_pool(x)
+    x = seblock1(x)
+    x = seblock2(x)
+    x = seblock3(x)
+    x = seblock4(x)
+    x = global_average_pool(x)
+    x = flatten(x)
+    x = dense(x)
+    outputs = x
 
-        self.architecture = tf.keras.Sequential([
-            Conv2D(64, kernel_size=7, strides=2, padding='same',
-                activation="relu", name='conv1',
-                use_bias=False),
-            MaxPool2D((3, 3), strides=2, padding='same', name='maxpool1'),
-            SEBasicBlock(64, name='seblock1', strides=1),
-            SEBasicBlock(128, name='seblock2', strides=2),
-            SEBasicBlock(256, name='seblock3', strides=2),
-            SEBasicBlock(512, name='seblock4', strides=2),
-            GlobalAveragePooling2D(name='globalaveragepool'),
-            Flatten(name='flatten'),
-            Dense(num_classes, activation='softmax', name='dense')
-        ])
+    model = Model(**kwargs, inputs=inputs, outputs=outputs, name='se_res_net_2')
 
-    def call(self, x):
-        """ Passes input image through the network. """
-        x = self.architecture(x)
-        return x
-
-    @staticmethod
     def loss_fn(labels, predictions):
         """ Loss function for the model. """
 
         return tf.keras.losses.sparse_categorical_crossentropy(labels, predictions)
 
+    model.optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
+    model.loss_fn = loss_fn
+
+    return model
