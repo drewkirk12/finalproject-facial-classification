@@ -1,7 +1,6 @@
 import argparse
 import cv2
 import numpy as np
-import os
 import tensorflow as tf
 
 from demo.camera import CameraImageProvider, CropAndResize
@@ -9,7 +8,7 @@ from demo.visualizer import Visualizer
 from demo.activations import ActivationVisualizer
 from models import InceptionModel, VGGModel
 from models2 import SEResNet as SEResNet2
-from preprocess2 import Datasets as Datasets2
+from preprocess import Datasets
 
 class_labels = [
 	'Angry',
@@ -44,7 +43,7 @@ models = {
 	'seresnet2': {
 		'model': lambda: SEResNet2(num_classes=len(class_labels)),
 		'input_size': (224, 224),
-		'preprocess': Datasets2('fer2013', 'seresnet', data_path='../data', augment=False).preprocess_fn,
+		'preprocess': Datasets('../data', 'seresnet').preprocess_fn,
 		'checkpoint_weights': 'checkpoints/seresnet2_model/upload/seresnet2.weights.e019-acc0.6305.h5',
 		'labels': class_labels,
 		'visualize_layers': ['conv1', 'seblock1', 'seblock2', 'seblock3', 'seblock4'],
