@@ -55,6 +55,16 @@ class Datasets():
                 split=['train', 'test'],
                 as_supervised=True)
 
+        self.classes = [
+        	'Angry',
+        	'Disgust',
+        	'Fear',
+        	'Happy',
+        	'Sad',
+        	'Surprise',
+        	'Neutral',
+        ]
+
         self.augmenter = ImageAugmenter(target_shape[:2])
 
         # Mean and std for standardization

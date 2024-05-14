@@ -288,6 +288,12 @@ def main():
     if not ARGS.evaluate and not os.path.exists(checkpoint_path):
         os.makedirs(checkpoint_path)
 
+    # Include confusion logger in callbacks if flag set
+    if ARGS.confusion:
+        logger = ConfusionMatrixLogger(logs_path, datasets)
+        logger.set_model(model)
+        logger.log_confusion_matrix(20, logs_path)
+        
     if ARGS.evaluate:
         test(model, datasets.test_data)
         #Lime explanation

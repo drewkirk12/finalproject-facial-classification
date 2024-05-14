@@ -38,22 +38,32 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         test_pred = []
         test_true = []
         count = 0
-        for i in self.datasets.test_data:
-            test_pred.append(self.model.predict(i[0], verbose=0))
-            test_true.append(i[1])
+        
+        for img, label in self.datasets.test_data:
+            pred = self.model(img, training=False)
+            pred = tf.argmax(pred, axis=-1)
+            test_pred.append(pred)
+            test_true.append(label)
+            print(pred.shape, end=' ', flush=True)
             count += 1
             if count >= 7100 / hp.batch_size:
                 break
 
-        test_pred = np.array(test_pred, dtype= "object")
-        test_pred = np.argmax(test_pred, axis=-1).flatten()
-        test_true = np.array(test_true).flatten()
+        print(tf.shape(test_pred[0]))
+        print(tf.shape(test_true[0]))
+        test_pred = tf.concat(test_pred, axis=0)
+        test_true = tf.concat(test_true, axis=0)
 
         # Source: https://www.tensorflow.org/tensorboard/image_summaries
         cm = sklearn.metrics.confusion_matrix(test_true, test_pred, )
-        figure = self.plot_confusion_matrix(
-            cm, class_names=self.datasets.classes)
-        cm_image = plot_to_image(figure)
+
+        for figsize in [3, 5, 8]:
+            figure = self.plot_confusion_matrix(
+                cm, class_names=self.datasets.classes,
+                figsize=(figsize, figsize))
+            cm_image = plot_to_image(figure)
+            figure.savefig(f'confusion{figsize}.pdf')
+            figure.savefig(f'confusion{figsize}.png')
 
         file_writer_cm = tf.summary.create_file_writer(
             self.logs_path + os.sep + "confusion_matrix")
@@ -62,12 +72,12 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
             tf.summary.image(
                 "Confusion Matrix (on validation set)", cm_image, step=epoch)
 
-    def plot_confusion_matrix(self, cm, class_names):
+    def plot_confusion_matrix(self, cm, class_names, figsize=(8, 8)):
         """ Plots a confusion matrix returned by
         sklearn.metrics.confusion_matrix(). """
 
         # Source: https://www.tensorflow.org/tensorboard/image_summaries
-        figure = plt.figure(figsize=(8, 8))
+        figure = plt.figure(figsize=figsize) # 5 5 
         plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Greens)
         plt.title("Confusion matrix")
         plt.colorbar()
@@ -85,9 +95,9 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
                 plt.text(j, i, cm[i, j],
                          horizontalalignment="center", color=color)
 
-        plt.tight_layout()
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
+        plt.tight_layout()
 
         return figure
     
