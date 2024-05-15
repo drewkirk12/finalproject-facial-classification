@@ -76,6 +76,9 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         """ Plots a confusion matrix returned by
         sklearn.metrics.confusion_matrix(). """
 
+        cm = np.around(cm.astype('float') / cm.sum(axis=1)
+               [:, np.newaxis], decimals=2)
+
         # Source: https://www.tensorflow.org/tensorboard/image_summaries
         figure = plt.figure(figsize=figsize) # 5 5 
         plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Greens)
@@ -85,8 +88,6 @@ class ConfusionMatrixLogger(tf.keras.callbacks.Callback):
         plt.xticks(tick_marks, class_names, rotation=45)
         plt.yticks(tick_marks, class_names)
 
-        cm = np.around(cm.astype('float') / cm.sum(axis=1)
-                       [:, np.newaxis], decimals=2)
 
         threshold = cm.max() / 2.
         for i in range(cm.shape[0]):
