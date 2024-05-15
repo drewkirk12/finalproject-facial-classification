@@ -17,8 +17,6 @@ The --lime-explainer argument along with the path to an image can be input to ob
 
 By using the --visualize-features map we can also obtain and store feature maps
 
-In order to run the live demo run pythom -m demo with the --model argument set to any of the following 
-
 ## Data
 
 We use FER2013. To load the data, download the dataset and extract it under data/fer2013. The files data/fer2013/train.csv and data/fer2013/fer2013/fer2013.csv should exist.
