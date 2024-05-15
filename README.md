@@ -25,3 +25,20 @@ We use FER2013. To load the data, download the dataset and extract it under data
 
 Dumitru, Ian Goodfellow, Will Cukierski, Yoshua Bengio. (2013). Challenges in Representation Learning: Facial Expression Recognition Challenge. Kaggle. https://kaggle.com/competitions/challenges-in-representation-learning-facial-expression-recognition-challenge
 
+## Demos
+
+To run the live demo, enter the code/ directory, and run
+```
+python3 -m demo --model <model name> --camera <camera number>
+```
+`model name` must be either `vgg`, `inception`, or `seresnet2`.
+
+Example:
+```
+python3 -m demo --model seresnet2 --camera 0
+```
+
+To show predictions for a single image, run
+```
+python3 -m demo.single <path to image>
+```

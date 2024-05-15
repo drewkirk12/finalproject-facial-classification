@@ -15,9 +15,10 @@ def parse_args():
 					 type=argparse.FileType('rb'),
 					 help="Image to open")
 	
-	parser.add_argument('output',
+	parser.add_argument('--output',
 					 type=str,
-					 help="Destination to write the plot")
+					 help="Destination to write the plot",
+					 required=False)
 	
 	return parser.parse_args()
 
@@ -90,7 +91,8 @@ def main():
 
 	# Save the figure
 	figure.show()
-	figure.savefig(args.output)
+	if args.output is not None:
+		figure.savefig(args.output)
 	plt.show()
 
 
