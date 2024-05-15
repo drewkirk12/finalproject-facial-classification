@@ -5,6 +5,39 @@ import numpy as np
 
 zero_image = np.zeros((1, 1, 3))
 
+def create_image_plot(axis, title=None):
+	"""Create an empty plot to show images."""
+	axis.set_xticks([])
+	axis.set_yticks([])
+	if title is not None:
+		axis.set_title(title)
+	return axis.imshow(zero_image)
+
+def create_prediction_plot(axis, class_labels, title=None, max=1.2, label_padding=0):
+	"""Create an empty plot to show predictions."""
+	artist = axis.barh(np.arange(len(class_labels)), np.ones((len(class_labels),)))
+	labels = axis.bar_label(artist, class_labels, padding=label_padding)
+	if title is not None:
+		axis.set_title(title)
+	axis.set_xlim(0, max)
+	return artist, labels
+
+def plot_predictions(predictions, class_labels,
+					 artist, labels,
+					 default_color='navy',
+					 highlight_color='red'):
+
+	max_prediction_value = np.max(predictions)
+	for i, label in enumerate(class_labels):
+		artist.patches[i].set_width(predictions[i])
+		if predictions[i] == max_prediction_value:
+			artist.patches[i].set(color=highlight_color)
+			labels[i].set(color=highlight_color)
+		else:
+			artist.patches[i].set(color=default_color)
+			labels[i].set(color=default_color)
+
+
 class Visualizer:
 	def __init__(self, image_provider, class_labels,
 			  classifier,
@@ -31,10 +64,7 @@ class Visualizer:
 
 	def init_input_image(self, figure, gridspec):
 		self.input_image_axis = figure.add_subplot(gridspec)
-		self.input_image_axis.set_xticks([])
-		self.input_image_axis.set_yticks([])
-		self.input_image_axis.set_title('Input image')
-		self.input_image_artist = self.input_image_axis.imshow(zero_image)
+		self.input_image_artist = create_image_plot(self.input_image_axis, 'Input image')
 
 	def init_modified_image(self, figure, gridspec):
 		self.modified_image_axes = [None for _ in self.modifiers]
@@ -50,16 +80,12 @@ class Visualizer:
 			col = i % grid_size
 
 			self.modified_image_axes[i] = figure.add_subplot(subgridspec[row, col])
-			self.modified_image_axes[i].set_xticks([])
-			self.modified_image_axes[i].set_yticks([])
-			self.modified_image_axes[i].set_title(label)
-			self.modified_image_artists[i] = self.modified_image_axes[i].imshow(zero_image)
+			self.modified_image_artists[i] = create_image_plot(self.modified_image_axes[i], label)
 
 	def init_prediction_plot(self, figure, gridspec, class_labels):
 		self.prediction_axis = figure.add_subplot(gridspec)
-		self.prediction_artist = self.prediction_axis.barh(np.arange(len(class_labels)), np.ones((len(class_labels),)))
-		self.prediction_labels = self.prediction_axis.bar_label(self.prediction_artist, class_labels)
-		self.prediction_axis.set_xlim(0, 1.2)
+		self.prediction_artist, self.prediction_labels = create_prediction_plot(self.prediction_axis,
+																		  class_labels)
 
 
 	def update(self, frame):
@@ -75,15 +101,10 @@ class Visualizer:
 
 		prediction_values = self.predict(image)
 
-		max_prediction_value = np.max(prediction_values)
-		for i, label in enumerate(self.class_labels):
-			self.prediction_artist.patches[i].set_width(prediction_values[i])
-			if prediction_values[i] == max_prediction_value:
-				self.prediction_artist.patches[i].set(color=self.highlight_color)
-				self.prediction_labels[i].set(color=self.highlight_color)
-			else:
-				self.prediction_artist.patches[i].set(color=self.default_color)
-				self.prediction_labels[i].set(color=self.default_color)
+		plot_predictions(prediction_values, self.class_labels,
+					 self.prediction_artist, self.prediction_labels,
+					 default_color=self.default_color,
+					 highlight_color=self.highlight_color)
 
 
 	def show(self, interval, save_count=0):
