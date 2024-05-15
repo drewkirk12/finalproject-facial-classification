@@ -1,6 +1,23 @@
 # finalproject-facial-classification
 Emotional Classification Models for Brown CS1430 Final Project
 
+For data download refer to the file data/fer2013/README.md
+
+In order to train the model run main.py with the --model argument set to any of the following ["seresnet", "seresnet2", "vgg", "Inception]
+
+A previously trained set of model weights can be loaded using the --checkpoint argument and passing in the file path to the weights but this is not required if you'ld like to train from scratch
+
+The --data argument allows for datasets to be specified using the filepath to the prefered dataset. This argument is not required in order to use the fer2013 dataset
+
+Confusion matrices can be recorded by running a training epoch with the --confusion flag. This matrix will appear in tensorboard or a file path can be specified to save the matrix
+
+In order to test the model the --evaluate flag
+
+The --lime-explainer argument along with the path to an image can be input to obtain the LIME Images for that input
+
+By using the --visualize-features map we can also obtain and store feature maps
+
+In order to run the live demo run pythom -m demo with the --model argument set to any of the following 
 
 ## Data
 
